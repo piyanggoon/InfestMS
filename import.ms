@@ -223,11 +223,15 @@ struct importWGT (
 			return false
 		)
 
--- 		nodeVerts == vertices #later
+		if node.verts.count != vertices then
+		(
+			MessageBox ("Vertex not match")
+			return false
+		)
 
 		if GetCommandPanelTaskMode() != #modify then
 			SetCommandPanelTaskMode #modify
-			
+		
 		addModifier node (Skin())
 		nodeModifier = node.modifiers[#Skin]
 		modPanel.setCurrentObject nodeModifier
