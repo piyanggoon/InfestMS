@@ -1,7 +1,7 @@
 typedef struct Header {
     char r3d[4];
     char fileType[4];
-    DWORD fileVertion;
+    DWORD fileVersion;
     uint32 skeltonID;
     uint32 boneLength;
 };
