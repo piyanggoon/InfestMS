@@ -120,7 +120,7 @@ struct importSKL
 		fn getOrigin bone =
 		(
 			v1 = bone.matrix[1].translation
-			v3 = Point3 bone.matrix[2]._11 bone.matrix[2]._12 bone.matrix[2]._13
+			v3 = Point3 bone.matrix[2]._11 bone.matrix[2]._12 bone.matrix[2]._13 -- right
 			fLen = bone.fLength / 2
 			origin = v1 + (Point3 (v3[1] * fLen) (v3[2] * fLen) (v3[3] * fLen))
 			return origin
