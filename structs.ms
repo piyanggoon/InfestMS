@@ -23,3 +23,9 @@ struct sklBone
 	matrix = #(),
 	node
 )
+
+struct wgtData
+(
+	boneID = #(0, 0, 0, 0),
+	weight = #(0, 0, 0, 0)
+)

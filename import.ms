@@ -24,13 +24,14 @@ struct import
 
 		if type == "sklt" then
 		(
-			skl = importSKL()
-			skl.loadSkeleton byteStream
+			global gSkl = importSKL()
+			gSkl.loadSkeleton byteStream
 		)
--- 		else if type == "wght" then
--- 		(
-
--- 		)
+		else if type == "wght" then
+		(
+			global gWgt = importWGT()
+			gWgt.loadWeight fileName byteStream
+		)
 	)
 )
 
@@ -80,7 +81,7 @@ struct importSKL
 			c2 = Point4 skl.c3[1] skl.c3[2] skl.c3[3] skl.c3[4]
 			c3 = Point4 skl.c2[1] skl.c2[2] skl.c2[3] skl.c2[4]
 
-			-- Row3 Up Row2
+			-- Row3 up Row2
 			r1 = Point3 c1[1] c2[1] c3[1]
 			r2 = Point3 c1[3] c2[3] c3[3]
 			r3 = Point3 c1[2] c2[2] c3[2]
@@ -173,6 +174,95 @@ struct importSKL
 				pt.wirecolor = red
 			else
 				pt.wirecolor = green
+		)
+	)
+)
+
+struct importWGT (
+-- 	Header
+	skeletonID,
+	vertices,
+-- 
+	dataList = #(),
+
+	fn loadWeight fileName byteStream =
+	(
+		skeletonID = ReadUInt byteStream
+		vertices = ReadUInt byteStream
+
+		for i = 1 to vertices do (
+			wgt = wgtData()
+
+			for i = 1 to 4 do (
+				wgt.boneID[i] = ReadByte byteStream #unsigned
+			)
+
+			for i = 1 to 4 do (
+				wgt.weight[i] = ReadFloat byteStream
+			)
+
+			append dataList wgt
+		)
+
+		fn getBoneIDByName name =
+		(
+			for i = 1 to gSkl.boneList.count do
+			(
+				if gSkl.boneList[i].name == name then
+					return i
+			)
+			return undefined
+		)
+
+-- 		Create Weight
+		node = getNodeByName fileName
+
+		if node == undefined then
+		(
+			MessageBox ("Not found \"" + fileName + "\"")
+			return false
+		)
+
+-- 		nodeVerts == vertices #later
+
+		if GetCommandPanelTaskMode() != #modify then
+			SetCommandPanelTaskMode #modify
+			
+		addModifier node (Skin())
+		nodeModifier = node.modifiers[#Skin]
+		modPanel.setCurrentObject nodeModifier
+		for bone in gSkl.boneList do
+		(
+			skinOps.AddBone nodeModifier bone.node 1
+		)
+		modPanel.setCurrentObject nodeModifier
+
+		for i = 1 to dataList.count do
+		(
+			vertex = i
+			data = dataList[i]
+
+			for i = 1 to 4 do
+			(
+				boneID = data.boneID[i] + 1
+				weight = data.weight[i]
+				bone = gSkl.boneList[boneID]
+
+				if bone.node != undefined then
+				(
+-- 					Swap bone L to R (wrong in vertex or wtf?)
+					if (iL = (findString bone.name "_L_")) != undefined then
+						boneID = getBoneIDByName (replace bone.name iL 3 "_R_")
+					else if (iR = (findString bone.name "_R_")) != undefined then
+						boneID = getBoneIDByName (replace bone.name iR 3 "_L_")
+
+-- 					Create Weight (Erased & Retained)
+					if i == 1 then
+						skinOps.ReplaceVertexWeights nodeModifier vertex boneID weight
+					else
+						skinOps.SetVertexWeights nodeModifier vertex boneID weight
+				)
+			)
 		)
 	)
 )

@@ -16,16 +16,17 @@ rollout importRollout "Import (SKL, WGT, ANIM)"
 		file = getOpenFileName caption:"Import SKL file" types:"Skeleton (*.skl)|*.skl"
 		if file != undefined then (
 			gImport.loadFile file
+			btnImportWgt.enabled = true -- test
 		)
 	)
 	
--- 	on btnImportWgt pressed do
--- 	(
--- 		file = getOpenFileName caption:"Import WGT file" types:"Mesh Weight (*.wgt)|*.wgt"
--- 		if file != undefined then (
-
--- 		)
--- 	)
+	on btnImportWgt pressed do
+	(
+		file = getOpenFileName caption:"Import WGT file" types:"Mesh Weight (*.wgt)|*.wgt"
+		if file != undefined then (
+			gImport.loadFile file
+		)
+	)
 )
 
 addRollout importRollout GUI

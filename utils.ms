@@ -1,17 +1,18 @@
-fn ReadFixedString bstream fixedLen =
+fn ReadFixedString byteStream fixedLen =
 (
 	str = ""
 	for i = 1 to fixedLen do
 	(
-		sStr = ReadByte bstream #unsigned
-		if sStr != 0xFD and sStr != 0xFC do(
+		sStr = ReadByte byteStream #unsigned
+		if sStr != 0xFD and sStr != 0xFC do
+		(
 			str += bit.intAsChar sStr	  
 		)
 	)
 	return str
 )
 
-fn ReadUInt bstream =
+fn ReadUInt byteStream =
 (
-	return readLong bstream #unsigned
+	return readLong byteStream #unsigned
 )
