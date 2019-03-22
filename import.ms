@@ -246,10 +246,22 @@ struct importWGT (
 			vertex = i
 			data = dataList[i]
 
+			ws = 0.0f
+			for i = 1 to 4 do
+			(
+				ws += data.weight[i]
+			)
+
 			for i = 1 to 4 do
 			(
 				boneID = data.boneID[i] + 1
-				weight = data.weight[i]
+
+-- 				Normalize weights
+				if ws > 1.0f then
+					weight = data.weight[i] / ws
+				else
+					weight = data.weight[i]
+
 				bone = gSkl.boneList[boneID]
 
 				if bone.node != undefined then
