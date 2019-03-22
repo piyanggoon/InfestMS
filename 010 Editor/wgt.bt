@@ -1,0 +1,17 @@
+typedef struct Header {
+    char r3d[4];
+    char fileType[4];
+    DWORD fileVertion;
+    DWORD skeltonID;
+    DWORD vertices;
+};
+
+typedef struct Data {
+    byte iBoneID[4];
+    float fWeight[4];
+};
+
+struct FILE {
+    Header header;
+    Data data[header.vertices];
+} file;

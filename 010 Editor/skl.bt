@@ -1,0 +1,28 @@
+typedef struct Header {
+    char r3d[4];
+    char fileType[4];
+    DWORD fileVertion;
+    uint32 skeltonID;
+    uint32 boneLength;
+};
+
+typedef struct Matrix {
+    float x;
+    float y;
+    float z;
+    float w;
+} matrix;
+
+typedef struct Data {
+    char boneName[32];
+    int parentID;
+    float fLength;
+    Matrix c0;
+    Matrix c1;
+    Matrix c2;
+};
+
+struct FILE {
+    Header header;
+    Data data[header.boneLength];
+} file;
