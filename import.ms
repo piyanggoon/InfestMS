@@ -16,7 +16,7 @@ struct import
 		type = ReadFixedString byteStream 4
 		version = ReadUInt byteStream
 
-		if r3d == "r3d2" and version == 1 then
+		if r3d != "r3d2" and version != 1 then
 		(
 			MessageBox("Wrong header file.")
 			return false
