@@ -252,7 +252,6 @@ struct importWGT (
 				ws += data.weight[i]
 			)
 
-			array = #(#(), #())
 			for i = 1 to 4 do
 			(
 				boneID = data.boneID[i] + 1
@@ -263,18 +262,23 @@ struct importWGT (
 				else
 					weight = data.weight[i]
 
--- 				Swap bone L to R (wrong in vertex or wtf?)
 				bone = gSkl.boneList[boneID]
-				if (iL = (findString bone.name "_L_")) != undefined then
-					boneID = getBoneIDByName (replace bone.name iL 3 "_R_")
-				else if (iR = (findString bone.name "_R_")) != undefined then
-					boneID = getBoneIDByName (replace bone.name iR 3 "_L_")
 
-				append array[1] boneID
-				append array[2] weight
+				if bone.node != undefined then
+				(
+-- 					Swap bone L to R (wrong in vertex or wtf?)
+					if (iL = (findString bone.name "_L_")) != undefined then
+						boneID = getBoneIDByName (replace bone.name iL 3 "_R_")
+					else if (iR = (findString bone.name "_R_")) != undefined then
+						boneID = getBoneIDByName (replace bone.name iR 3 "_L_")
+
+-- 					Create Weight (Erased & Retained)
+					if i == 1 then
+						skinOps.ReplaceVertexWeights nodeModifier vertex boneID weight
+					else
+						skinOps.SetVertexWeights nodeModifier vertex boneID weight
+				)
 			)
-
-			skinOps.ReplaceVertexWeights nodeModifier vertex array[1] array[2]
 		)
 	)
 )
