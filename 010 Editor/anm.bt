@@ -1,0 +1,25 @@
+typedef struct Header {
+    char r3d[4];
+    char fileType[4];
+    DWORD fileVersion;
+    DWORD skeletonID;
+    DWORD boneLength;
+    DWORD frameCount;
+    DWORD fps;
+};
+
+typedef struct Frame {
+    float quaternion[4];
+    float position[3];
+};
+
+typedef struct Data (DWORD frameCount) {
+    char name[32];
+    DWORD flag;
+    Frame frame[frameCount];
+};
+
+struct FILE {
+    Header header;
+    Data data(header.frameCount)[header.boneLength];
+} file;
