@@ -10,27 +10,147 @@ struct import
 	fn loadFile file =
 	(
 		fileName = (getFilenameFile file)
-		byteStream = fopen file "rb"
+		fileType = (getFilenameType file)
 
-		r3d = ReadFixedString byteStream 4
-		type = ReadFixedString byteStream 4
-		version = ReadUInt byteStream
-
-		if r3d != "r3d2" and version != 1 then
+		if fileType != ".sco" then
 		(
-			MessageBox("Wrong header file.")
-			return false
+			byteStream = fopen file "rb"
+
+			r3d = ReadFixedString byteStream 4
+			type = ReadFixedString byteStream 4
+			version = ReadUInt byteStream
+
+			if r3d != "r3d2" and version != 1 then
+			(
+				MessageBox("Wrong header file.")
+				return false
+			)
+
+			if type == "sklt" then
+			(
+				global gSkl = importSKL()
+				gSkl.loadSkeleton byteStream
+			)
+			else if type == "wght" then
+			(
+				global gWgt = importWGT()
+				gWgt.loadWeight fileName byteStream
+			)
+			else if type == "anmd" then
+			(
+				global gAnm = importANM()
+				gAnm.loadAnimation byteStream
+			)
+		)
+		else
+		(
+			fileStream = openFile file mode:"rt"
+
+			global gSco = importSCO()
+			gSco.loadObject fileStream
+		)
+	)
+)
+
+struct importSCO (
+	name,
+	vertArray = #(),
+	faceArray = #(),
+
+	fn vertConvert vert =
+	(
+		space = filterString vert " "
+
+		if space.count == 6 then
+		(
+			MessageBox("Vertex = 6")
+		)
+		else if space.count == 10 then
+		(
+			vertex = scoVertex()
+
+			position = Point3 (space[1] as float) (space[2] as float) (space[3] as float)
+			vertex.position = point3Swap position
+
+			normal = Point3 (space[4] as float) (space[5] as float) (space[6] as float)
+			vertex.normal = point3Swap normal
+
+			tangent = Point3 (space[7] as float) (space[8] as float) (space[9] as float)
+			vertex.tangent = point3Swap tangent
+
+			vertex.vTangent = space[10] as float
+
+			return vertex
+		)
+		else if space.count == 13 then
+		(
+			MessageBox("Vertex = 13")
+		)
+	),
+
+	fn faceConvert face =
+	(
+		str = filterString face "\t"
+
+		face = scoFace()
+		face.name = str[3]
+
+		vIndices = filterString str[2] " "
+		face.vIndices = Point3 (vIndices[1] as float) (vIndices[2] as float) (vIndices[3] as float)
+
+		vVertices = filterString str[4] " "
+		face.v1 = #((vVertices[1] as float), (vVertices[2] as float))
+		face.v2 = #((vVertices[3] as float), (vVertices[4] as float))
+		face.v3 = #((vVertices[5] as float), (vVertices[6] as float))
+
+		return face
+	),
+
+	fn loadObject fileStream =
+	(
+		skipToString fileStream "Name= "
+		name = readLine fileStream
+
+		skipToString fileStream "CentralPoint= "	
+		centralPoint = filterString (readLine fileStream) " "
+		centralPoint = point3Swap (Point3 (centralPoint[1] as float) (centralPoint[2] as float) (centralPoint[3] as float))
+
+		skipToString fileStream "Verts= "
+		verts = (readLine fileStream) as Integer
+		for i = 1 to verts do
+		(
+			append vertArray (vertConvert (readLine fileStream))
 		)
 
-		if type == "sklt" then
+		skipToString fileStream "Faces= "
+		faces = (readLine fileStream) as Integer
+		for i = 1 to faces do
 		(
-			global gSkl = importSKL()
-			gSkl.loadSkeleton byteStream
+			append faceArray (faceConvert (readLine fileStream))
 		)
-		else if type == "wght" then
+
+-- 		Create Mesh
+		vertices = #()
+		for vert in vertArray do
 		(
-			global gWgt = importWGT()
-			gWgt.loadWeight fileName byteStream
+			append vertices [vert.position[1], vert.position[2], vert.position[3]]
+		)
+
+		faces = #()
+		tverts = #()
+		for face in faceArray do
+		(
+			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1]
+			append tverts [face.v1[1], face.v1[2], 0.0]
+			append tverts [face.v2[1], face.v2[2], 0.0]
+			append tverts [face.v3[1], face.v3[2], 0.0]
+		)
+
+		node = mesh vertices:vertices tverts:tverts faces:faces name:(toLower name)
+		buildTVFaces node
+		for i = 1 to node.numfaces do
+		(
+			setTVFace node i ((i * 3) - 2) ((i * 3) - 1) (i * 3) -- tverts
 		)
 	)
 )
@@ -87,8 +207,6 @@ struct importSKL
 			r3 = Point3 c1[2] c2[2] c3[2]
 			r4 = Point3 c1[4] c2[4] c3[4]
 
-			append bone.matrix (Matrix3 r1 r2 r3 r4)
-
 			m = sklMatrix()
 			m._11 = c1[1]
 			m._21 = c1[2]
@@ -103,8 +221,8 @@ struct importSKL
 			m._33 = c3[3]
 			m._43 = c3[4]
 
+			append bone.matrix (Matrix3 r1 r2 r3 r4)
 			append bone.matrix m
-
 			append boneList bone
 		)
 
@@ -129,12 +247,12 @@ struct importSKL
 
 		fn getDirection bone =
 		(
-		   return Point3 bone.matrix[2]._11 bone.matrix[2]._12 bone.matrix[2]._13
+			return Point3 bone.matrix[2]._21 bone.matrix[2]._22 bone.matrix[2]._23 -- up
 		)
 
 		fn createBone name parent start end direction size =
 		(
-			if start == undefined or start == undefined or direction == undefined then
+			if start == undefined or end == undefined or direction == undefined then
 				return undefined
 
 			node = BoneSys.createBone start end direction
@@ -190,14 +308,17 @@ struct importWGT (
 		skeletonID = ReadUInt byteStream
 		vertices = ReadUInt byteStream
 
-		for i = 1 to vertices do (
+		for i = 1 to vertices do
+		(
 			wgt = wgtData()
 
-			for i = 1 to 4 do (
+			for i = 1 to 4 do
+			(
 				wgt.boneID[i] = ReadByte byteStream #unsigned
 			)
 
-			for i = 1 to 4 do (
+			for i = 1 to 4 do
+			(
 				wgt.weight[i] = ReadFloat byteStream
 			)
 
@@ -263,20 +384,97 @@ struct importWGT (
 					weight = data.weight[i]
 
 				bone = gSkl.boneList[boneID]
-
 				if bone.node != undefined then
 				(
--- 					Swap bone L to R (wrong in vertex or wtf?)
-					if (iL = (findString bone.name "_L_")) != undefined then
-						boneID = getBoneIDByName (replace bone.name iL 3 "_R_")
-					else if (iR = (findString bone.name "_R_")) != undefined then
-						boneID = getBoneIDByName (replace bone.name iR 3 "_L_")
-
 -- 					Create Weight (Erased & Retained)
 					if i == 1 then
 						skinOps.ReplaceVertexWeights nodeModifier vertex boneID weight
 					else
 						skinOps.SetVertexWeights nodeModifier vertex boneID weight
+				)
+			)
+		)
+	)
+)
+
+struct importANM (
+-- 	Header
+	skeletonID,
+	boneLength,
+	frameCount,
+	fps,
+-- 
+	dataList = #(),
+
+	fn loadAnimation byteStream =
+	(
+		skeletonID = ReadUInt byteStream
+		boneLength = ReadUInt byteStream
+		frameCount = ReadUInt byteStream
+		fps = ReadUInt byteStream
+
+		for i = 1 to boneLength do
+		(
+			anm = anmData()
+			anm.name = ReadFixedString byteStream 32
+			anm.flag = ReadUInt byteStream
+
+			for i = 1 to frameCount do
+			(
+				frame = anmFrame()
+
+				for i = 1 to 4 do
+				(
+					frame.fQuaternion[i] = ReadFloat byteStream
+				)
+
+				for i = 1 to 3 do
+				(
+					frame.fPosition[i] = ReadFloat byteStream
+				)
+
+				append anm.frame frame
+			)
+
+			append dataList anm
+		)
+
+
+-- 		Check node anim file #later
+
+		fn getBoneByName name =
+		(
+			for bone in gSkl.boneList do
+			(
+				if bone.name == name then
+					return bone
+			)
+			return undefined
+		)
+
+-- 		Create Animation
+		with animate on
+		(
+-- 			Setting FPS & Frame #later
+			for i = 1 to frameCount do
+			(
+				at time (i - 1) -- Start frame 0 in 3dsmax
+				(
+					for data in dataList do
+					(
+						bone = getBoneByName data.name
+						if bone != undefined and bone.node != undefined then
+						(
+							position = data.frame[i].fPosition
+							quaternion = data.frame[i].fQuaternion
+
+							quaternion = Quat quaternion[1] quaternion[2] quaternion[3] quaternion[4]
+							quaternion = maxtrix3Swap (quaternion as Matrix3)
+
+							in coordsys parent bone.node.rotation = quaternion
+							in coordsys parent bone.node.pos = Point3 position[1] position[3] position[2]
+						)
+					)
 				)
 			)
 		)

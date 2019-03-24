@@ -1,3 +1,18 @@
+struct scoVertex (
+	position,
+	normal,
+	tangent,
+	vTangent
+)
+
+struct scoFace (
+	name,
+	vIndices,
+	v1 = #(0, 0),
+	v2 = #(0, 0),
+	v3 = #(0, 0)
+)
+
 struct sklData
 (
 	name,
@@ -28,4 +43,15 @@ struct wgtData
 (
 	boneID = #(0, 0, 0, 0),
 	weight = #(0, 0, 0, 0)
+)
+
+struct anmFrame (
+	fQuaternion = #(0, 0, 0, 0),
+	fPosition = #(0, 0, 0)
+)
+
+struct anmData (
+	name,
+	flag,
+	frame = #()
 )
