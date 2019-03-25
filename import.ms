@@ -59,32 +59,54 @@ struct importSCO (
 
 	fn vertConvert vert =
 	(
-		space = filterString vert " "
+		str = filterString vert " "
 
-		if space.count == 6 then
+		if str.count == 6 then
 		(
-			MessageBox("Vertex = 6")
+			MessageBox("this mesh is old format #fix later")
+			return false
 		)
-		else if space.count == 10 then
+		else if str.count == 10 then
 		(
 			vertex = scoVertex()
 
-			position = Point3 (space[1] as float) (space[2] as float) (space[3] as float)
+			position = Point3 (str[1] as float) (str[2] as float) (str[3] as float)
 			vertex.position = point3Swap position
 
-			normal = Point3 (space[4] as float) (space[5] as float) (space[6] as float)
+			normal = Point3 (str[4] as float) (str[5] as float) (str[6] as float)
 			vertex.normal = point3Swap normal
 
-			tangent = Point3 (space[7] as float) (space[8] as float) (space[9] as float)
+			tangent = Point3 (str[7] as float) (str[8] as float) (str[9] as float)
 			vertex.tangent = point3Swap tangent
 
-			vertex.vTangent = space[10] as float
+			vertex.vTangent = str[10] as float
 
 			return vertex
 		)
-		else if space.count == 13 then
+		else if str.count == 12 or str.count == 13 then
 		(
-			MessageBox("Vertex = 13")
+			vertex = scoVertex()
+
+			position = Point3 (str[1] as float) (str[2] as float) (str[3] as float)
+			vertex.position = point3Swap position
+
+			normal = Point3 (str[4] as float) (str[5] as float) (str[6] as float)
+			vertex.normal = point3Swap normal
+
+			tangent = Point3 (str[7] as float) (str[8] as float) (str[9] as float)
+			vertex.tangent = point3Swap tangent
+
+			if str.count == 12 then
+			(
+				vertex.vColor = Point3 (str[10] as float) (str[11] as float) (str[12] as float) -- swap ?
+			)
+			else
+			(
+				vertex.vTangent = str[10] as float
+				vertex.vColor = Point3 (str[11] as float) (str[12] as float) (str[13] as float) -- swap ?
+			)
+
+			return vertex
 		)
 	),
 
@@ -140,18 +162,24 @@ struct importSCO (
 		tverts = #()
 		for face in faceArray do
 		(
-			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1]
 			append tverts [face.v1[1], face.v1[2], 0.0]
 			append tverts [face.v2[1], face.v2[2], 0.0]
 			append tverts [face.v3[1], face.v3[2], 0.0]
+			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1]
 		)
 
 		node = mesh vertices:vertices tverts:tverts faces:faces name:(toLower name)
+
 		buildTVFaces node
+
 		for i = 1 to node.numfaces do
 		(
 			setTVFace node i ((i * 3) - 2) ((i * 3) - 1) (i * 3) -- tverts
 		)
+
+		update node
+
+		node.objectOffsetPos = -centralPoint
 	)
 )
 
@@ -224,16 +252,6 @@ struct importSKL
 			append bone.matrix (Matrix3 r1 r2 r3 r4)
 			append bone.matrix m
 			append boneList bone
-		)
-
-		fn getBoneByName name =
-		(
-			for bone in boneList do
-			(
-				if bone.name == name then
-					return bone
-			)
-			return undefined
 		)
 
 		fn getOrigin bone =
@@ -439,7 +457,6 @@ struct importANM (
 			append dataList anm
 		)
 
-
 -- 		Check node anim file #later
 
 		fn getBoneByName name =
@@ -472,7 +489,7 @@ struct importANM (
 							quaternion = maxtrix3Swap (quaternion as Matrix3)
 
 							in coordsys parent bone.node.rotation = quaternion
-							in coordsys parent bone.node.pos = Point3 position[1] position[3] position[2]
+							in coordsys parent bone.node.pos = Point3 position[1] position[3] position[2] -- Z up Y
 						)
 					)
 				)

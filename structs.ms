@@ -2,7 +2,8 @@ struct scoVertex (
 	position,
 	normal,
 	tangent,
-	vTangent
+	vTangent,
+	vColor
 )
 
 struct scoFace (
