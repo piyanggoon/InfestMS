@@ -418,6 +418,7 @@ struct importSKL
 						biped.setTransform bip #pos bone.node.transform.position true
 						biped.setTransform bip #rotation  bone.node.transform.rotation true
 						bone.node.parent = bip -- Link Bone to Biped (for use biped in animation mode)
+						hide bone.node
 					)
 				)
 			)
