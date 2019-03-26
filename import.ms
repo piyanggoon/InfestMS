@@ -583,6 +583,28 @@ struct importANM
 			return undefined
 		)
 
+-- 		Unlink Biped (before update transform)
+		if gImport.showBiped == true then
+		(
+			for bone in gSkl.boneList do
+			(
+				if (findString bone.name "Bip01") != undefined then
+				(
+					if bone.name != "Bip01" then
+					(
+						if (findString bone.node.parent.name "Biped01") != undefined then
+						(
+							bone.node.parent = findNodeByBip bone.node.parent.parent.name
+						)
+					)
+					else
+					(
+						bone.node.parent = undefined
+					)
+				)
+			)
+		)
+
 -- 		Create Animation
 		with animate on
 		(
@@ -604,8 +626,37 @@ struct importANM
 
 							in coordsys parent bone.node.rotation = quaternion
 							in coordsys parent bone.node.pos = Point3 position[1] position[3] position[2] -- Z up Y
+
+-- 							Sync Biped to Bone
+							if gImport.showBiped == true then
+							(
+								if (findString bone.name "Bip01") != undefined then
+								(
+									bip = findNodeByBone bone.name
+									if bip != undefined then
+									(
+										biped.setTransform bip #pos bone.node.transform.position true
+										biped.setTransform bip #rotation  bone.node.transform.rotation true
+									)
+								)
+							)
 						)
 					)
+				)
+			)
+		)
+
+-- 		Link Bone to Biped (after finish import animation)
+		if gImport.showBiped == true then
+		(
+			for bone in gSkl.boneList do
+			(
+				if (findString bone.name "Bip01") != undefined then
+				(
+					if bone.node.name != "Bip01" then
+						bone.node.parent = findNodeByBone bone.node.parent.name
+					else
+						bone.node.parent = findNodeByBone bone.node.name
 				)
 			)
 		)
