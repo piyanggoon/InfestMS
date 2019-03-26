@@ -49,3 +49,109 @@ fn maxtrix3Swap matrix =
 
 	return matrix3 r1 r2 r3 r4
 )
+
+-- 	Modify from "FBX to Biped 0.29"
+-- 	(https://cafe.naver.com/pinksox/6064)
+fn getBipedType node =
+(
+	types = #(
+		#larm, #rarm,
+		#lfingers, #rfingers,
+		#lleg, #rleg,
+		#ltoes, #rtoes,
+		#spine, #tail, #head,
+		#pelvis,
+		#vertical, #horizontal,
+		#turn,
+		#footprints,
+		#neck,
+		#pony1, #pony2,
+		#prop1, #prop2, #prop3,
+		#lfArmTwist, #rfArmTwist,
+		#lUparmTwist, #rUparmTwist,
+		#lThighTwist, #rThighTwist,
+		#lCalfTwist, #rCalfTwist,
+		#lHorseTwist, #rHorseTwist			
+	)
+
+	if (classof node) != Biped_Object then
+		return #(#notBiped, 0)
+
+	for type in types do
+	(
+		for i = 1 to (biped.maxNumLinks node) do
+		(
+			try
+			(
+				if node == (biped.getNode node type link:i) then
+					return #(type, i)
+			)
+			catch
+			(
+-- 				empty
+			)
+		)
+	)
+
+	return #(#xtra, 0)
+)
+
+fn findNodeByBip name =
+(
+	if (index = findString name "Biped01") then
+	(
+		str = replace name index 7 "Bip01"
+		while (index = findString str " ") != undefined do
+		(
+			str = replace str index 1 "_"
+		)
+		return getNodeByName str
+	)
+	return undefined
+)
+
+fn findNodeByBone name =
+(
+	if (index = findString name "Bip01") then
+	(
+		str = replace name index 5 "Biped01"
+		while (index = findString str "_") != undefined do
+		(
+			str = replace str index 1 " "
+		)
+		return getNodeByName str
+	)
+	return undefined
+)
+
+fn getLocalScaleXWorldPos node =
+(
+	scale = biped.getTransform node #scale
+	matrix = matrix3 1
+	matrix.pos = [scale.x, 0, 0]
+	matrix *= node.transform
+	return matrix.pos
+)
+
+fn getChildByScalePos node =
+(
+	if (classof node) != Biped_Object then
+		return undefined
+
+	if node.children.count == 0 then
+		return undefined
+
+	if node.children.count == 1 then
+		return node.children[1]
+
+	index = 0
+	childDist = #()
+	for i = 1 to node.children.count do
+	(
+		append childDist (distance node.children[i].transform.position (getLocalScaleXWorldPos node))
+		minDist = amin childDist
+		index = findItem childDist minDist
+	)
+
+	return node.children[index]
+)

@@ -7,8 +7,12 @@ struct import
 	type,
 	version,
 
+	showBiped,
+	showDummy,
+
 	fn loadFile file =
 	(
+		global gImport = this
 		fileName = (getFilenameFile file)
 		fileType = (getFilenameType file)
 
@@ -22,7 +26,7 @@ struct import
 
 			if r3d != "r3d2" and version != 1 then
 			(
-				MessageBox("Wrong header file.")
+				MessageBox "Wrong header file."
 				return false
 			)
 
@@ -52,7 +56,8 @@ struct import
 	)
 )
 
-struct importSCO (
+struct importSCO
+(
 	name,
 	vertArray = #(),
 	faceArray = #(),
@@ -63,7 +68,7 @@ struct importSCO (
 
 		if str.count == 6 then
 		(
-			MessageBox("this mesh is old format #fix later")
+			MessageBox "this mesh is old format #fix later"
 			return false
 		)
 		else if str.count == 10 then
@@ -301,20 +306,127 @@ struct importSKL
 		)
 
 -- 		Create Dummy
-		for bone in boneList do
+		if gImport.showDummy == true then
 		(
-			pt = point name:(bone.name + "_Dummy") size:0.025 Box:on cross:off drawontop:on
-			pt.transform = bone.node.transform
-			pt.parent = bone.node
-			if bone.parentID == -1 then
-				pt.wirecolor = red
-			else
-				pt.wirecolor = green
+			for bone in boneList do
+			(
+				pt = point name:(bone.name + "_Dummy") size:0.025 Box:on cross:off drawontop:on
+				pt.transform = bone.node.transform
+				pt.parent = bone.node
+				if bone.parentID == -1 then
+					pt.wirecolor = red
+				else
+					pt.wirecolor = green
+			)
+		)
+
+-- 		Create Biped
+-- 		Modify from "FBX to Biped 0.29"
+-- 		(https://cafe.naver.com/pinksox/6064)
+		if gImport.showBiped == true then
+		(
+			node = biped.createNew 2 -90 [0, 0, 0] arms:true neckLinks:1 \ 
+			spineLinks:3 legLinks:3 fingers:5 fingerLinks:3 toes:1 \ 
+			toeLinks:1 ankleAttach:0.3 trianglePelvis:True \ 
+			prop1Exists:True forearmTwistLinks:2
+			node.controller.rootName = "Biped01"
+
+-- 			Biped Figure Sync
+			rootBip = getNodeByName "Biped01"
+			rootBone = getNodeByName "Bip01"
+			rootBip.controller.rootnode.controller.figureMode = true
+			biped.setTransform rootBip #pos rootBone.transform.position false
+			biped.setTransform rootBip #rotation rootBone.transform.rotation false
+
+			for bone in boneList do
+			(
+				if bone.node != undefined then
+				(
+					if (index = findString bone.name "Bip01") != undefined then
+					(
+						bip = getNodeByName (replace bone.name index 5 "Biped01")
+						if bip != undefined and bip.Name != "Biped01" then
+						(
+							bipType = getBipedType bip
+							bipScale = biped.getTransform bip #scale
+							bipChild = getChildByScalePos bip
+
+							if bipType[1] == #pelvis then
+							(
+								lLeg = biped.getNode rootBip #lleg link:1
+								lLegNode = findNodeByBip lLeg.name
+
+								rLeg = biped.getNode rootBip #rleg link:1
+								rLegNode = findNodeByBip rLeg.name
+
+								if lLegNode != undefined and rLegNode != undefined then
+								(
+									bipScale = biped.getTransform bip #scale
+									dist = distance lLegNode.transform.position rLegNode.transform.position
+
+									biped.setTransform bip #rotation (bone.node.transform.rotation) false
+									biped.setTransform bip #scale [bipScale.x, bipScale.y, dist] false
+								)
+							)
+							else if bipType[1] == #lleg or bipType[1] == #rleg and bipType[2] == 3 then
+							(
+								boneParent = findNodeByBip bip.parent.name
+								bipParent = findNodeByBone boneParent.name
+
+								deltaPos = bone.node.transform.position - boneParent.transform.position
+								biped.setTransform bip #pos (bipParent.transform.position + deltaPos) false
+								biped.setTransform bip #rotation bone.node.transform.rotation false
+
+								if bipChild != undefined and (boneChild = findNodeByBip bipChild.name) != undefined then
+								(
+									localDist = boneChild.transform * (inverse bip.transform)
+									biped.setTransform bip #scale [localDist.position.x, bipScale.y, bipScale.z] false
+								)
+							)
+							else
+							(
+								boneParent = findNodeByBip bip.parent.name
+								bipParent = findNodeByBone boneParent.name
+
+								deltaPos = bone.node.transform.position - boneParent.transform.position
+								biped.setTransform bip #pos (bipParent.transform.position + deltaPos) false
+								biped.setTransform bip #rotation bone.node.transform.rotation false
+
+								if bipChild != undefined and (boneChild = findNodeByBip bipChild.name) != undefined then
+								(
+									dist = distance bone.node.transform.position boneChild.transform.position
+									biped.setTransform bip #scale [dist, bipScale.y, bipScale.z] false
+								)
+							)
+						)
+					)
+				)
+			)
+
+-- 			Sync Biped to Bone (after figure sync)
+			rootBip.controller.rootnode.controller.figureMode = false
+			biped.setTransform rootBip #pos rootBone.transform.position true
+			biped.setTransform rootBip #rotation  rootBone.transform.rotation true
+
+			for bone in boneList do
+			(
+				if (findString bone.name "Bip01") != undefined then 
+				(
+					bip = findNodeByBone bone.name
+					if bip != undefined then
+					(
+						biped.setTransform bip #pos bone.node.transform.position true
+						biped.setTransform bip #rotation  bone.node.transform.rotation true
+						bone.node.parent = bip -- Link Bone to Biped (for use biped in animation mode)
+					)
+				)
+			)
 		)
 	)
 )
 
-struct importWGT (
+struct importWGT
+(
 -- 	Header
 	skeletonID,
 	vertices,
@@ -358,13 +470,13 @@ struct importWGT (
 
 		if node == undefined then
 		(
-			MessageBox ("Not found \"" + fileName + "\"")
+			MessageBox "Not found \"" + fileName + "\""
 			return false
 		)
 
 		if node.verts.count != vertices then
 		(
-			MessageBox ("Vertex not match")
+			MessageBox "Vertex not match"
 			return false
 		)
 
@@ -415,7 +527,8 @@ struct importWGT (
 	)
 )
 
-struct importANM (
+struct importANM
+(
 -- 	Header
 	skeletonID,
 	boneLength,

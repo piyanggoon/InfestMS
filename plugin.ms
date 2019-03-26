@@ -1,6 +1,6 @@
 filein "import.ms"
 
-GUI = newRolloutFloater "InfestMS" 225 375
+GUI = newRolloutFloater "InfestMS" 225 395
 
 rollout importRollout "Import"
 (
@@ -15,7 +15,8 @@ rollout importRollout "Import"
 	on btnImportSco pressed do
 	(
 		file = getOpenFileName caption:"Import SCO file" types:"Object (*.sco)|*.sco"
-		if file != undefined then (
+		if file != undefined then
+		(
 			gImport.loadFile file -- not finish
 		)
 	)
@@ -23,7 +24,8 @@ rollout importRollout "Import"
 	on btnImportSkl pressed do
 	(
 		file = getOpenFileName caption:"Import SKL file" types:"Skeleton (*.skl)|*.skl"
-		if file != undefined then (
+		if file != undefined then
+		(
 			gImport.loadFile file
 
 			btnImportWgt.enabled = true -- test
@@ -34,7 +36,8 @@ rollout importRollout "Import"
 	on btnImportWgt pressed do
 	(
 		file = getOpenFileName caption:"Import WGT file" types:"Mesh Weight (*.wgt)|*.wgt"
-		if file != undefined then (
+		if file != undefined then
+		(
 			gImport.loadFile file
 		)
 	)
@@ -42,7 +45,8 @@ rollout importRollout "Import"
 	on btnImportAnm pressed do
 	(
 		file = getOpenFileName caption:"Import ANM file" types:"Animation (*.anm)|*.anm"
-		if file != undefined then (
+		if file != undefined then
+		(
 			gImport.loadFile file
 		)
 	)
@@ -50,7 +54,22 @@ rollout importRollout "Import"
 
 rollout importOtRollout "Import options"
 (
-	checkbox dummyChecked "Dummy" tooltip:"Dummy (Enable / Disable)" enabled:false
+	checkbox bipedChecked "Biped (Test)" tooltip:"Biped (Enable / Disable)" align:#center
+	checkbox dummyChecked "Dummy" tooltip:"Dummy (Enable / Disable)" align:#center
+
+	on bipedChecked changed state do
+	(
+		if state == true then
+		(
+			MessageBox "Only (Human, Zombie) support now !"
+		)
+		gImport.showBiped = state
+	)
+
+	on dummyChecked changed state do
+	(
+		gImport.showDummy = state
+	)
 )
 
 rollout exportRollout "Export"

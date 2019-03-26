@@ -1,4 +1,5 @@
-struct scoVertex (
+struct scoVertex
+(
 	position,
 	normal,
 	tangent,
@@ -6,7 +7,8 @@ struct scoVertex (
 	vColor
 )
 
-struct scoFace (
+struct scoFace
+(
 	name,
 	vIndices,
 	v1 = #(0, 0),
@@ -46,12 +48,14 @@ struct wgtData
 	weight = #(0, 0, 0, 0)
 )
 
-struct anmFrame (
+struct anmFrame
+(
 	fQuaternion = #(0, 0, 0, 0),
 	fPosition = #(0, 0, 0)
 )
 
-struct anmData (
+struct anmData
+(
 	name,
 	flag,
 	frame = #()
