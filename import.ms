@@ -410,7 +410,7 @@ struct importSKL
 
 			for bone in boneList do
 			(
-				if (findString bone.name "Bip01") != undefined then 
+				if (findString bone.name "Bip01") != undefined then
 				(
 					bip = findNodeByBone bone.name
 					if bip != undefined then
@@ -653,10 +653,7 @@ struct importANM
 			(
 				if (findString bone.name "Bip01") != undefined then
 				(
-					if bone.node.name != "Bip01" then
-						bone.node.parent = findNodeByBone bone.node.parent.name
-					else
-						bone.node.parent = findNodeByBone bone.node.name
+					bone.node.parent = findNodeByBone bone.node.name
 				)
 			)
 		)
