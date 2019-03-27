@@ -425,19 +425,20 @@ struct importSKL
 				)
 			)
 
--- 			Create Biped Transform Events ( i know it lag like shit :( )
-			when transform syncArray changes handleAt:#redrawViews do
+-- 			Sync Bone to Biped (not finish)
+			global syncBoneToBip
+			fn syncBoneToBip timer node =
 			(
-				if $ != undefined then -- delete event #later
+				try
 				(
 					for bip in syncArray do
 					(
 						if (bone = findNodeByBip bip.name) != undefined then
 						(
-							if bip.name == $.name then
+							if bip.name == node.name then
 							(
-								in coordsys world bone.pos = $.transform.position
-								in coordsys world bone.rotation = inverse $.transform.rotation
+								in coordsys world bone.pos = node.transform.position
+								in coordsys world bone.rotation = inverse node.transform.rotation
 							)
 							else
 							(
@@ -447,6 +448,22 @@ struct importSKL
 						)
 					)
 				)
+				catch
+				(
+					dotNet.removeEventHandlers timer "Tick"
+				)
+			)
+
+			global timerNet = dotNetObject "System.Windows.Forms.Timer"
+			when transform syncArray changes handleAt:#redrawViews do
+			(
+				timerNet.Stop()
+				dotNet.removeEventHandlers timerNet "Tick"
+
+				fn syncFunc = syncBoneToBip timerNet $
+				dotNet.addEventHandler timerNet "Tick" syncFunc
+				timerNet.Interval = 250
+				timerNet.Start()
 			)
 		)
 	)
