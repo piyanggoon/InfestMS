@@ -284,6 +284,7 @@ struct importSKL
 				node.parent = parent
 			node.Width = size
 			node.Height = size
+			node.boneEnable = false
 			return node
 		)
 
@@ -416,9 +417,47 @@ struct importSKL
 					if bip != undefined then
 					(
 						biped.setTransform bip #pos bone.node.transform.position true
-						biped.setTransform bip #rotation  bone.node.transform.rotation true
-						bone.node.parent = bip -- Link Bone to Biped (for use biped in animation mode)
+						biped.setTransform bip #rotation bone.node.transform.rotation true
 						hide bone.node
+					)
+				)
+			)
+
+-- 			Create Biped Transform Events ( i know it lag like shit :( )
+			global syncArray = #()
+			for bone in boneList do
+			(
+				if (findString bone.name "Bip01") != undefined then
+				(
+					bip = findNodeByBone bone.name
+					if bip != undefined then
+					(
+						append syncArray bip
+					)
+				)
+			)
+
+			when transform syncArray changes handleAt:#redrawViews do
+			(
+				if $ != undefined then -- delete event #later
+				(
+					for bip in syncArray do
+					(
+						if (bone = findNodeByBip bip.name) != undefined then
+						(
+							if bip.name == $.name then
+							(
+								position = $.transform.position
+								rotation = inverse $.transform.rotation
+							)
+							else
+							(
+								position = bip.transform.position
+								rotation = inverse bip.transform.rotation
+							)
+							in coordsys world bone.rotation = rotation
+							in coordsys world bone.pos = position
+						)
 					)
 				)
 			)
@@ -583,28 +622,6 @@ struct importANM
 			return undefined
 		)
 
--- 		Unlink Biped (before update transform)
-		if gImport.showBiped == true then
-		(
-			for bone in gSkl.boneList do
-			(
-				if (findString bone.name "Bip01") != undefined then
-				(
-					if bone.name != "Bip01" then
-					(
-						if (findString bone.node.parent.name "Biped01") != undefined then
-						(
-							bone.node.parent = findNodeByBip bone.node.parent.parent.name
-						)
-					)
-					else
-					(
-						bone.node.parent = undefined
-					)
-				)
-			)
-		)
-
 -- 		Create Animation
 		with animate on
 		(
@@ -621,11 +638,20 @@ struct importANM
 							position = data.frame[i].fPosition
 							quaternion = data.frame[i].fQuaternion
 
+							position = Point3 position[1] position[3] position[2] -- Z up Y
 							quaternion = Quat quaternion[1] quaternion[2] quaternion[3] quaternion[4]
 							quaternion = maxtrix3Swap (quaternion as Matrix3)
 
-							in coordsys parent bone.node.rotation = quaternion
-							in coordsys parent bone.node.pos = Point3 position[1] position[3] position[2] -- Z up Y
+							if (bit.get data.flag 2) == true then
+							(
+								in coordsys world bone.node.rotation = quaternion
+								in coordsys world bone.node.pos = position
+							)
+							else
+							(
+								in coordsys parent bone.node.rotation = quaternion
+								in coordsys parent bone.node.pos = position
+							)
 
 -- 							Sync Biped to Bone
 							if gImport.showBiped == true then
@@ -636,24 +662,12 @@ struct importANM
 									if bip != undefined then
 									(
 										biped.setTransform bip #pos bone.node.transform.position true
-										biped.setTransform bip #rotation  bone.node.transform.rotation true
+										biped.setTransform bip #rotation bone.node.transform.rotation true
 									)
 								)
 							)
 						)
 					)
-				)
-			)
-		)
-
--- 		Link Bone to Biped (after finish import animation)
-		if gImport.showBiped == true then
-		(
-			for bone in gSkl.boneList do
-			(
-				if (findString bone.name "Bip01") != undefined then
-				(
-					bone.node.parent = findNodeByBone bone.node.name
 				)
 			)
 		)
