@@ -409,6 +409,7 @@ struct importSKL
 			biped.setTransform rootBip #pos rootBone.transform.position true
 			biped.setTransform rootBip #rotation  rootBone.transform.rotation true
 
+			global syncArray = #()
 			for bone in boneList do
 			(
 				if (findString bone.name "Bip01") != undefined then
@@ -419,24 +420,12 @@ struct importSKL
 						biped.setTransform bip #pos bone.node.transform.position true
 						biped.setTransform bip #rotation bone.node.transform.rotation true
 						hide bone.node
-					)
-				)
-			)
-
--- 			Create Biped Transform Events ( i know it lag like shit :( )
-			global syncArray = #()
-			for bone in boneList do
-			(
-				if (findString bone.name "Bip01") != undefined then
-				(
-					bip = findNodeByBone bone.name
-					if bip != undefined then
-					(
 						append syncArray bip
 					)
 				)
 			)
 
+-- 			Create Biped Transform Events ( i know it lag like shit :( )
 			when transform syncArray changes handleAt:#redrawViews do
 			(
 				if $ != undefined then -- delete event #later
@@ -447,16 +436,14 @@ struct importSKL
 						(
 							if bip.name == $.name then
 							(
-								position = $.transform.position
-								rotation = inverse $.transform.rotation
+								in coordsys world bone.pos = $.transform.position
+								in coordsys world bone.rotation = inverse $.transform.rotation
 							)
 							else
 							(
-								position = bip.transform.position
-								rotation = inverse bip.transform.rotation
+								in coordsys world bone.pos = bip.transform.position
+								in coordsys world bone.rotation = inverse bip.transform.rotation
 							)
-							in coordsys world bone.rotation = rotation
-							in coordsys world bone.pos = position
 						)
 					)
 				)
