@@ -155,3 +155,13 @@ fn getChildByScalePos node =
 
 	return node.children[index]
 )
+
+fn findCloneByBone name =
+(
+	if (index = findString name "Bip01") then
+	(
+		str = replace name index 5 "Clone"
+		return getNodeByName str
+	)
+	return undefined
+)

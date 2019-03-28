@@ -7,8 +7,8 @@ struct import
 	type,
 	version,
 
-	showBiped,
-	showDummy,
+	showBiped = false,
+	showDummy = false,
 
 	fn loadFile file =
 	(
@@ -290,6 +290,7 @@ struct importSKL
 
 -- 		Create Bone
 		nodeGroup = #()
+		cloneGroup = #()
 		for i = 1 to boneList.count do
 		(
 			bone = boneList[i]
@@ -304,6 +305,21 @@ struct importSKL
 			)
 
 			bone.node = nodeGroup[i]
+
+-- 			Clone bone for animation import
+			if gImport.showBiped == true then
+			(
+				if bone.parentID == -1 then
+				(
+					cloneGroup[i] = createBone (bone.name + "_Clone") undefined bone.matrix[1].translation bone.matrix[1].translation (getDirection bone) 0.0
+				)
+				else
+				(
+					cloneGroup[i] = createBone (bone.name + "_Clone") cloneGroup[bone.parentID + 1] bone.matrix[1].translation (getOrigin bone) (getDirection bone) 0.01
+				)
+
+				hide cloneGroup[i]
+			)
 		)
 
 -- 		Create Dummy
@@ -632,26 +648,30 @@ struct importANM
 							quaternion = Quat quaternion[1] quaternion[2] quaternion[3] quaternion[4]
 							quaternion = maxtrix3Swap (quaternion as Matrix3)
 
-							if (bit.get data.flag 2) == true then
-							(
-								in coordsys world bone.node.rotation = quaternion
-								in coordsys world bone.node.pos = position
-							)
-							else
+							if gImport.showBiped == false then
 							(
 								in coordsys parent bone.node.rotation = quaternion
 								in coordsys parent bone.node.pos = position
 							)
-
--- 							Sync Biped to Bone
-							if gImport.showBiped == true then
+							else
 							(
-								if (findString bone.name "Bip01") != undefined then
+								if (clone = getNodeByName (bone.name + "_Clone")) != undefined then
 								(
-									if (bip = findNodeByBone bone.name) != undefined then
+-- 									Update clone transform first
+									in coordsys parent clone.rotation = quaternion
+									in coordsys parent clone.pos = position
+
+	-- 								Sync (Bone / Weapon) to clone transform
+									if (findString bone.name "Bip01") != undefined then
 									(
-										biped.setTransform bip #pos bone.node.transform.position true
-										biped.setTransform bip #rotation bone.node.transform.rotation true
+										biped.setTransform bone.node #pos clone.transform.position true
+										biped.setTransform bone.node #rotation clone.transform.rotation true
+									)
+									else -- Weapon
+									(
+-- 										* not sure in this, wait for test and fix again
+										bone.node.transform.position = clone.transform.position
+										bone.node.transform.rotation = clone.transform.rotation
 									)
 								)
 							)
