@@ -409,61 +409,47 @@ struct importSKL
 			biped.setTransform rootBip #pos rootBone.transform.position true
 			biped.setTransform rootBip #rotation  rootBone.transform.rotation true
 
-			global syncArray = #()
 			for bone in boneList do
 			(
 				if (findString bone.name "Bip01") != undefined then
 				(
-					bip = findNodeByBone bone.name
-					if bip != undefined then
+					if (bip = findNodeByBone bone.name) != undefined then
 					(
 						biped.setTransform bip #pos bone.node.transform.position true
 						biped.setTransform bip #rotation bone.node.transform.rotation true
-						hide bone.node
-						append syncArray bip
 					)
 				)
 			)
 
--- 			Sync Bone to Biped (not finish)
-			global syncBoneToBip
-			fn syncBoneToBip timer node =
+-- 			Replace Bip By Biped (after sync position & rotation)
+-- 			(replace weapon parent first)
+			for bone in boneList do
 			(
-				try
+				if (findString bone.name "Bip01") == undefined then
 				(
-					for bip in syncArray do
+					if (bip = findNodeByBone bone.node.parent.name) != undefined then
 					(
-						if (bone = findNodeByBip bip.name) != undefined then
-						(
-							if bip.name == node.name then
-							(
-								in coordsys world bone.pos = node.transform.position
-								in coordsys world bone.rotation = inverse node.transform.rotation
-							)
-							else
-							(
-								in coordsys world bone.pos = bip.transform.position
-								in coordsys world bone.rotation = inverse bip.transform.rotation
-							)
-						)
+						bone.node.parent = bip
 					)
-				)
-				catch
-				(
-					dotNet.removeEventHandlers timer "Tick"
 				)
 			)
 
-			global timerNet = dotNetObject "System.Windows.Forms.Timer"
-			when transform syncArray changes handleAt:#redrawViews do
+-- 			(delete and replace bip to biped)
+			for bone in boneList do
 			(
-				timerNet.Stop()
-				dotNet.removeEventHandlers timerNet "Tick"
+				if (findString bone.name "Bip01") != undefined then
+				(
+					if bone.node != undefined then
+					(
+						delete bone.node
+					)
 
-				fn syncFunc = syncBoneToBip timerNet $
-				dotNet.addEventHandler timerNet "Tick" syncFunc
-				timerNet.Interval = 250
-				timerNet.Start()
+					if (bip = findNodeByBone bone.name) != undefined then
+					(
+						bip.name = bone.name
+						bone.node = bip
+					)
+				)
 			)
 		)
 	)
