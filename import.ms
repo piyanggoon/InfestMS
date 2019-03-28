@@ -648,8 +648,7 @@ struct importANM
 							(
 								if (findString bone.name "Bip01") != undefined then
 								(
-									bip = findNodeByBone bone.name
-									if bip != undefined then
+									if (bip = findNodeByBone bone.name) != undefined then
 									(
 										biped.setTransform bip #pos bone.node.transform.position true
 										biped.setTransform bip #rotation bone.node.transform.rotation true
