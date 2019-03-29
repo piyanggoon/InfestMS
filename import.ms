@@ -126,9 +126,9 @@ struct importSCO
 		face.vIndices = Point3 (vIndices[1] as float) (vIndices[2] as float) (vIndices[3] as float)
 
 		vVertices = filterString str[4] " "
-		face.v1 = #((vVertices[1] as float), (vVertices[2] as float)) -- u
-		face.v2 = #((vVertices[3] as float), (vVertices[4] as float)) -- v
-		face.v3 = #((vVertices[5] as float), (vVertices[6] as float)) -- w
+		face.v1 = #((vVertices[1] as float), (vVertices[2] as float)) -- u, v
+		face.v2 = #((vVertices[3] as float), (vVertices[4] as float)) -- u, v
+		face.v3 = #((vVertices[5] as float), (vVertices[6] as float)) -- u, v
 
 		return face
 	),
@@ -167,9 +167,9 @@ struct importSCO
 		tverts = #()
 		for face in faceArray do
 		(
-			append tverts [face.v1[1], 1 - face.v1[2], 0.0] -- 1-x = inverse
-			append tverts [face.v2[1], 1 - face.v2[2], 0.0] -- 1-x = inverse
-			append tverts [face.v3[1], 1 - face.v3[2], 0.0] -- 1-x = inverse
+			append tverts [face.v1[1], 1 - face.v1[2], 0.0] -- 1-v = inverse
+			append tverts [face.v2[1], 1 - face.v2[2], 0.0] -- 1-v = inverse
+			append tverts [face.v3[1], 1 - face.v3[2], 0.0] -- 1-v = inverse
 			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1] -- id + 1
 		)
 
