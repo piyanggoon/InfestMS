@@ -126,9 +126,9 @@ struct importSCO
 		face.vIndices = Point3 (vIndices[1] as float) (vIndices[2] as float) (vIndices[3] as float)
 
 		vVertices = filterString str[4] " "
-		face.v1 = #((vVertices[1] as float), (vVertices[2] as float))
-		face.v2 = #((vVertices[3] as float), (vVertices[4] as float))
-		face.v3 = #((vVertices[5] as float), (vVertices[6] as float))
+		face.v1 = #((vVertices[1] as float), (vVertices[2] as float)) -- u
+		face.v2 = #((vVertices[3] as float), (vVertices[4] as float)) -- v
+		face.v3 = #((vVertices[5] as float), (vVertices[6] as float)) -- w
 
 		return face
 	),
@@ -167,15 +167,20 @@ struct importSCO
 		tverts = #()
 		for face in faceArray do
 		(
-			append tverts [face.v1[1], face.v1[2], 0.0]
-			append tverts [face.v2[1], face.v2[2], 0.0]
-			append tverts [face.v3[1], face.v3[2], 0.0]
-			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1]
+			append tverts [face.v1[1], 1 - face.v1[2], 0.0] -- 1-x = inverse
+			append tverts [face.v2[1], 1 - face.v2[2], 0.0] -- 1-x = inverse
+			append tverts [face.v3[1], 1 - face.v3[2], 0.0] -- 1-x = inverse
+			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1] -- id + 1
 		)
 
 		node = mesh vertices:vertices tverts:tverts faces:faces name:(toLower name)
 
 		buildTVFaces node
+
+		for i = 1 to node.numverts do
+		(
+			setNormal node i vertArray[i].normal
+		)
 
 		for i = 1 to node.numfaces do
 		(
@@ -347,6 +352,7 @@ struct importSKL
 			toeLinks:1 ankleAttach:0.3 trianglePelvis:True \ 
 			prop1Exists:True forearmTwistLinks:2
 			node.controller.rootName = "Biped01"
+-- 			node.controller.bodyType = 3
 
 -- 			Biped Figure Sync
 			rootBip = getNodeByName "Biped01"
