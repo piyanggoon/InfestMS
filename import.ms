@@ -454,19 +454,9 @@ struct importSKL
 					(
 						if (dummy = getNodeByName (bone.name + "_Dummy")) != undefined then
 						(
-							if bone.name == "Bip01" then
+							if (bip = findNodeByBone bone.name) != undefined then
 							(
-								if (bip = findNodeByBone bone.name) != undefined then
-								(
-									dummy.parent = bip
-								)
-							)
-							else
-							(
-								if (bip = findNodeByBone bone.node.parent.name) != undefined then
-								(
-									dummy.parent = bip
-								)
+								dummy.parent = bip
 							)
 						)
 					)
