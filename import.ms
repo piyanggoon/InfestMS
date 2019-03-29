@@ -438,7 +438,7 @@ struct importSKL
 			)
 
 -- 			Replace Bip By Biped (after sync position & rotation)
--- 			(replace weapon parent first)
+-- 			(replace (weapon / dummy) parent first)
 			for bone in boneList do
 			(
 				if (findString bone.name "Bip01") == undefined then
@@ -446,6 +446,29 @@ struct importSKL
 					if (bip = findNodeByBone bone.node.parent.name) != undefined then
 					(
 						bone.node.parent = bip
+					)
+				)
+				else
+				(
+					if gImport.showDummy == true then
+					(
+						if (dummy = getNodeByName (bone.name + "_Dummy")) != undefined then
+						(
+							if bone.name == "Bip01" then
+							(
+								if (bip = findNodeByBone bone.name) != undefined then
+								(
+									dummy.parent = bip
+								)
+							)
+							else
+							(
+								if (bip = findNodeByBone bone.node.parent.name) != undefined then
+								(
+									dummy.parent = bip
+								)
+							)
+						)
 					)
 				)
 			)
@@ -631,7 +654,17 @@ struct importANM
 -- 		Create Animation
 		with animate on
 		(
--- 			Setting FPS & Frame #later
+-- 			Remove all animation
+			current = getCurrentSelection()
+			select objects
+			maxOps.deleteSelectedAnimation()
+			clearSelection()
+			select current
+
+-- 			Setting FPS & Frame time
+			frameRate = fps
+			animationRange = interval 0 frameCount
+
 			for i = 1 to frameCount do
 			(
 				at time (i - 1) -- Start frame 0 in 3dsmax
@@ -661,7 +694,7 @@ struct importANM
 									in coordsys parent clone.rotation = quaternion
 									in coordsys parent clone.pos = position
 
-	-- 								Sync (Bone / Weapon) to clone transform
+-- 									Sync (Biped / Weapon) to clone transform
 									if (findString bone.name "Bip01") != undefined then
 									(
 										biped.setTransform bone.node #pos clone.transform.position true
