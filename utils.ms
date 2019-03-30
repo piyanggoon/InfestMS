@@ -155,3 +155,20 @@ fn getChildByScalePos node =
 
 	return node.children[index]
 )
+
+fn getFileByName folder name type =
+(
+	files = getFiles (folder + "\\*." + type)
+	for file in files do
+	(
+		if (toLower name) == (toLower (filenameFromPath file)) then
+		(
+			return file
+		)
+		else if (toLower name) == (toLower (getFilenameFile file)) then
+		(
+			return file
+		)
+	)
+	return undefined
+)

@@ -9,12 +9,14 @@ struct import
 
 	showBiped = false,
 	showDummy = false,
+	showMaterial = true,
 
 	fn loadFile file =
 	(
 		global gImport = this
-		fileName = (getFilenameFile file)
-		fileType = (getFilenameType file)
+		filePath = getFilenamePath file
+		fileName = getFilenameFile file
+		fileType = getFilenameType file
 
 		if fileType != ".sco" then
 		(
@@ -51,7 +53,7 @@ struct import
 			fileStream = openFile file mode:"rt"
 
 			global gSco = importSCO()
-			gSco.loadObject fileStream
+			gSco.loadObject filePath fileStream
 		)
 	)
 )
@@ -120,7 +122,8 @@ struct importSCO
 		str = filterString face "\t"
 
 		face = scoFace()
-		face.name = str[3]
+
+		face.name = (filterString str[3] " ")[1]
 
 		vIndices = filterString str[2] " "
 		face.vIndices = Point3 (vIndices[1] as float) (vIndices[2] as float) (vIndices[3] as float)
@@ -133,7 +136,7 @@ struct importSCO
 		return face
 	),
 
-	fn loadObject fileStream =
+	fn loadObject filePath fileStream =
 	(
 		skipToString fileStream "Name= "
 		name = readLine fileStream
@@ -165,29 +168,87 @@ struct importSCO
 
 		faces = #()
 		tverts = #()
+		matNames = #()
 		for face in faceArray do
 		(
-			append tverts [face.v1[1], 1 - face.v1[2], 0.0] -- 1-v = inverse
+			append tverts [face.v1[1], 1 - face.v1[2], 0.0] -- 1-v = inverse uv map
 			append tverts [face.v2[1], 1 - face.v2[2], 0.0] -- 1-v = inverse
 			append tverts [face.v3[1], 1 - face.v3[2], 0.0] -- 1-v = inverse
 			append faces [face.vIndices[1] + 1, face.vIndices[2] + 1, face.vIndices[3] + 1] -- id + 1
+			appendIfUnique matNames face.name
 		)
 
 		node = mesh vertices:vertices tverts:tverts faces:faces name:(toLower name)
 
 		buildTVFaces node
 
-		for i = 1 to node.numverts do
-		(
-			setNormal node i vertArray[i].normal
-		)
-
 		for i = 1 to node.numfaces do
 		(
 			setTVFace node i ((i * 3) - 2) ((i * 3) - 1) (i * 3) -- tverts
 		)
 
+		for i = 1 to node.numverts do
+		(
+			setNormal node i vertArray[i].normal
+		)
+
 		update node
+
+-- 		Create Material
+		if gImport.showMaterial == true then
+		(
+			matArray = #()
+			for name in matNames do
+			(
+				if (file = getFileByName (filePath + "Materials") name "mat") != undefined then
+				(
+					if (fileStream = openFile file mode:"rt") != undefined then
+					(
+						mat = StandardMaterial()
+						mat.showInViewport = true
+
+						skipToString fileStream "Name= "
+						mat.name = readLine fileStream
+
+						if (skipToString fileStream "Texture= ") != undefined then
+						(
+							texture = readLine fileStream -- Diffuse
+							if((texture = getFileByName (filePath + "Textures") texture "dds") != undefined) then
+							(
+								mat.diffuseMap = Bitmaptexture fileName:texture
+							)
+						)
+
+-- 						Not finish
+
+						append matArray mat
+					)
+				)
+			)
+
+			if matArray.count > 0 then
+			(
+				mat = Multimaterial numsubs:matArray.count
+				mat.name = name
+				mat.materialList = matArray
+				
+				node.material = mat
+
+				for i = 1 to node.numfaces do
+				(
+					for ii = 1 to mat.numsubs do
+					(
+						if mat.materialList[ii].name == faceArray[i].name then
+						(
+							setFaceMatID node i ii
+							exit
+						)
+					)
+				)
+
+				update node
+			)
+		)
 
 		node.objectOffsetPos = -centralPoint
 	)

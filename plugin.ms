@@ -1,6 +1,6 @@
 filein "import.ms"
 
-GUI = newRolloutFloater "InfestMS" 225 395
+GUI = newRolloutFloater "InfestMS" 225 415
 
 rollout importRollout "Import"
 (
@@ -56,6 +56,7 @@ rollout importOtRollout "Import options"
 (
 	checkbox bipedChecked "Biped (Test)" tooltip:"Biped (Enable / Disable)" align:#center
 	checkbox dummyChecked "Dummy" tooltip:"Dummy (Enable / Disable)" align:#center
+	checkbox materialChecked "Material" tooltip:"Material (Enable / Disable)" align:#center checked:true
 
 	on bipedChecked changed state do
 	(
@@ -69,6 +70,11 @@ rollout importOtRollout "Import options"
 	on dummyChecked changed state do
 	(
 		gImport.showDummy = state
+	)
+
+	on materialChecked changed state do
+	(
+		gImport.showMaterial = state
 	)
 )
 
